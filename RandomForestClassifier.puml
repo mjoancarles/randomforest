@@ -1,0 +1,81 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+class RandomForestClassifier {
+-num_trees : int
+-min_size : int
+-max_depth: int
+-ratio_samples : float
+-num_random_features : float
+-criterion : String
+
++fit(x: float[][], y: float[])
++predict(X : float[][]) : int[]
+-make_decision_trees (dataset : Dataset)
+-make_node (dataset : Dataset, depth : int) : Node
+-make_parent_or_leaf (dataset : Dataset, depth : int) : Node
+-make_leaf (dataset : Dataset) : leaf
+-combine_predictions (predictions : int[]) : int
+-best_split (idx_features : int[], dataset : Dataset) : FALTA
+-CART_cost (left_dataset : Dataset, right_dataset : Dataset) : float
+-gini(dataset : Dataset) : double
+}
+
+interface Node {
+//+predict(x:float[]) : int//
+}
+
+class Dataset {
+-X: float [][]
+-y: int[]
+-num_samples : int
+-num_features : int
++random_sampling(ratio : float) : Dataset FALTA
++split(index_feature : int, threshold : ) FALTA
++distribution() : float[]
++most_frequent_label() : int
+}
+
+class Leaf extends Node{
+-label: int
++predict(x : float[]): int
+}
+
+class Parent extends Node{
+-idx_features : int
+-value : float
+-predict(x: float[]) : int
+
+
+}
+note right of Leaf::predict
+return label
+end note
+
+note right of Parent::predict
+if x[feature] <= value:
+    return left_child.predict(x)
+else:
+    return right_child.predict(x)
+end note
+
+note left of RandomForestClassifier::predict
+ypred=[]
+for x in X:
+    predictions = [root.predict(x)
+                   for root in self.desition_trees]
+    #majority voting
+    ypred.append(max(set(predictions).
+                 key==predictions.count))
+    return np.array(ypred)
+end note
+note right of Node
+design patern
+**composite**
+end note
+
+RandomForestClassifier *--right--> "1.." Node: decision_trees
+Parent --> "2" Node: left_child, right_child
+
+@enduml
