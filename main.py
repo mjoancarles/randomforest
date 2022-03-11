@@ -18,13 +18,13 @@ plt.close('all')
 plt.figure(), plt.plot(X[idx_rocks].T,'b'), plt.title('all samples of class rock')
 plt.figure(), plt.plot(X[idx_mines].T,'r'), plt.title('all samples of class mine')
 
-
+'''
 #IRIS DATASET
 iris = sklearn.datasets.load_iris()
 print(iris.DESCR)
 X, y = iris.data, iris.target
 # X 150 x 4, y 150 numpy arrays
-
+'''
 ratio_train, ratio_test = 0.7, 0.3
 # 70% train, 30% test
 num_samples, num_features = X.shape
@@ -45,7 +45,7 @@ ratio_samples = 0.7 # sampling with replacement
 num_trees = 10 # number of decision trees
 num_random_features = int(np.sqrt(num_features))
 # number of features to consider at each node when looking for the best split
-criterion = 'gini' # 'gini' or 'entropy'
+criterion = 'entropy' # 'gini' or 'entropy'
 rf = RandomForestClassifier(num_trees, max_depth, min_size_split, ratio_samples, num_random_features, criterion)
 
 # train = make the decision trees

@@ -2,6 +2,8 @@ import numpy as np
 from Dataset import Dataset
 from Leaf import Leaf
 from Parent import Parent
+from Gini import Gini
+from Entropy import Entropy
 
 
 class RandomForestClassifier:
@@ -12,9 +14,16 @@ class RandomForestClassifier:
         self.ratio_samples=ratio_samples
         self.num_random_features=num_random_features
         self.criterion=criterion
+        self.impurity=self.get_impurity()
+
+    def get_impurity(self):
+        if self.criterion == "gini":
+            return Gini()
+        elif self.criterion == "entropy":
+            return Entropy()
 
     def fit(self, X, y): #train
-        # a pair (X,y) is a dataset, with its own responsibilities
+        #its own responsibilities
         dataset = Dataset(X, y)
         self._make_decision_trees(dataset)
 
@@ -82,11 +91,13 @@ class RandomForestClassifier:
         samples_left=left_dataset.num_samples
         samples_right=right_dataset.num_samples
         sum_samples= samples_left+samples_right
-        cost=(samples_left/sum_samples)*self._gini(left_dataset)+(samples_right/sum_samples)*self._gini(right_dataset)
+        cost=(samples_left/sum_samples)*self.impurity.compute_impurity(left_dataset)+(samples_right/sum_samples)*self.impurity.compute_impurity(right_dataset)
         return cost
-
+'''
     def _gini(self, dataset):
         count=np.bincount(dataset.y)
         sum_gini=sum(list(map(lambda x: (x/dataset.num_samples)**2, count)))
-        return 1-sum_gini
+        return 1-sum_g
+'''
+
 

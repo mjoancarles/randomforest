@@ -17,13 +17,25 @@ class RandomForestClassifier {
 -make_parent_or_leaf (dataset : Dataset, depth : int) : Node
 -make_leaf (dataset : Dataset) : leaf
 -combine_predictions (predictions : int[]) : int
--best_split (idx_features : int[], dataset : Dataset) : FALTA
+-best_split (idx_features : int[], dataset : Dataset) : Dataset[2]
 -CART_cost (left_dataset : Dataset, right_dataset : Dataset) : float
--gini(dataset : Dataset) : double
+-get_impurity() : ImpurityMeasures
 }
 
 interface Node {
 //+predict(x:float[]) : int//
+}
+
+interface ImpurityMeasures{
+//+compute_impurity(dataset : Dataset) : double//
+}
+
+class Gini implements ImpurityMeasures {
++comupte_impurity(dataset : Dataset) : double
+}
+
+class Entropy implements ImpurityMeasures {
++comupte_impurity(dataset : Dataset) : double
 }
 
 class Dataset {
@@ -31,18 +43,18 @@ class Dataset {
 -y: int[]
 -num_samples : int
 -num_features : int
-+random_sampling(ratio : float) : Dataset FALTA
-+split(index_feature : int, threshold : ) FALTA
++random_sampling(ratio_samples : float) : Dataset
++split(idx : int, value : double) : Dataset[2]
 +distribution() : float[]
 +most_frequent_label() : int
 }
 
-class Leaf extends Node{
+class Leaf implements Node{
 -label: int
 +predict(x : float[]): int
 }
 
-class Parent extends Node{
+class Parent implements Node{
 -idx_features : int
 -value : float
 -predict(x: float[]) : int
@@ -53,7 +65,7 @@ note right of Leaf::predict
 return label
 end note
 
-note right of Parent::predict
+note left of Parent::predict
 if x[feature] <= value:
     return left_child.predict(x)
 else:
@@ -74,8 +86,13 @@ note right of Node
 design patern
 **composite**
 end note
-
+note right of ImpurityMeasures
+design patern
+**strategy**
+end note
+RandomForestClassifier *--down--> "1" ImpurityMeasures : impurity
 RandomForestClassifier *--right--> "1.." Node: decision_trees
 Parent --> "2" Node: left_child, right_child
+
 
 @enduml
