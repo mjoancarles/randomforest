@@ -1,10 +1,16 @@
 import numpy as np
+import time
+from multiprocessing import Pool
 from Dataset import Dataset
 from Leaf import Leaf
 from Parent import Parent
 from Gini import Gini
 from Entropy import Entropy
+import logging.config
+from tqdm import tqdm
 
+logging.config.fileConfig("logging.conf")
+logger=logging.getLogger("RandomForestClassifier")
 
 class RandomForestClassifier:
     def __init__(self, num_trees, min_size, max_depth, ratio_samples, num_random_features, criterion):
@@ -13,37 +19,68 @@ class RandomForestClassifier:
         self.max_depth=max_depth
         self.ratio_samples=ratio_samples
         self.num_random_features=num_random_features
-        self.criterion=criterion
-        self.impurity=self.get_impurity()
-
-    def get_impurity(self):
-        if self.criterion == "gini":
-            return Gini()
-        elif self.criterion == "entropy":
-            return Entropy()
+        if criterion == "gini":
+            self.impurity=Gini()
+        elif criterion == "entropy":
+            self.impurity=Entropy()
 
     def fit(self, X, y): #train
         #its own responsibilities
         dataset = Dataset(X, y)
-        self._make_decision_trees(dataset)
+        self._make_decision_trees_multiprocessing(dataset)
+
 
     def predict(self,X):
         ypred = []
-        for x in X:
+        for x in tqdm(X, total=len(X), desc="Predict progress: "):
             predictions = [root.predict(x) for root in self.decision_trees]
             # majority voting
             counts = np.bincount(predictions)
             ypred.append(np.argmax(counts))
         return np.array(ypred)
 
+    def _target_predict(self,x):
+        predictions=[root.predict(x) for root in self.decision_trees]
+        counts = np.bincount(predictions)
+        prediction= np.argmax(counts)
+        logger.debug("Prediction done, result: {}".format(prediction))
+        return prediction
+
+    def predict_multiprocessing(self,X):
+        #t1 = time.time()
+        ypred=[]
+        with Pool() as pool:
+            iterable=[sample for sample in X]
+            ypred = pool.map(self._target_predict,tqdm(iterable,total=len(X),desc="Predict progress: "))
+        #t2 = time.time()
+        #logger.info('Predict lasted {} seconds per sample'.format((t2 - t1) / len(X)))
+        return np.array(ypred)
+
+
     def _make_decision_trees(self, dataset):
         self.decision_trees = []
-        for i in range(self.num_trees):
+        for i in tqdm(range(self.num_trees),total=self.num_trees,desc="Fit progress: "):
             # sample a subset of the dataset with replacement using np.random.choice()
             # to get the indices of rows in X and y
             subset = dataset.random_sampling(self.ratio_samples)
             tree = self._make_node(subset,1) # the root of the decision tree
             self.decision_trees.append(tree)
+
+
+    def _target_fit(self, dataset, nproc):
+        logger.debug('process {} starts'.format(nproc))
+        subset = dataset.random_sampling(self.ratio_samples)
+        tree = self._make_node(subset,1)
+        logger.debug('process {} ends'.format(nproc))
+        return tree
+
+    def _make_decision_trees_multiprocessing(self,dataset):
+        #t1=time.time()
+        with Pool() as pool:
+            iterable=[(dataset,nprocess) for nprocess in range(self.num_trees)]
+            self.decision_trees = pool.starmap(self._target_fit,tqdm(iterable,total=len(iterable),desc="Fit progress: "))
+        #t2=time.time()
+        #logger.info('Fit lasted {} seconds per tree'.format((t2-t1)/self.num_trees))
 
     def _make_node(self, dataset, depth):
         if depth == self.max_depth or dataset.num_samples <= self.min_size or len(np.unique(dataset.y)) == 1:
@@ -78,12 +115,15 @@ class RandomForestClassifier:
         # find the best pair (feature, value) by exploring all possible pairs
         best_feature_index, best_value, minimum_cost, best_split = np.Inf, np.Inf, np.Inf, None
         for idx in idx_features:
-            values = np.unique(dataset.X[:,idx])
-            for val in values:
-                left_dataset, right_dataset = dataset.split(idx, val)
-                cost = self._CART_cost(left_dataset, right_dataset)  # J(k,v)
-                if cost < minimum_cost:
-                    best_feature_index, best_value, minimum_cost, best_split = idx, val, cost, [left_dataset, right_dataset]
+            #values = np.unique(dataset.X[:,idx])
+            max = np.amax(dataset.X[:,idx])
+            min = np.amin(dataset.X[:,idx])
+            val=np.random.choice(np.arange(min,max+1))
+            #for val in values:
+            left_dataset, right_dataset = dataset.split(idx, val)
+            cost = self._CART_cost(left_dataset, right_dataset)  # J(k,v)
+            if cost < minimum_cost:
+                best_feature_index, best_value, minimum_cost, best_split = idx, val, cost, [left_dataset, right_dataset]
         return best_feature_index, best_value, minimum_cost, best_split
 
     def _CART_cost(self, left_dataset, right_dataset):

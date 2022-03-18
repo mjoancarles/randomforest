@@ -1,5 +1,8 @@
 import numpy as np
+import logging.config
 
+logging.config.fileConfig("logging.conf")
+logger=logging.getLogger("Dataset")
 
 class Dataset():
     def __init__(self,X,y):
@@ -10,15 +13,18 @@ class Dataset():
             self.num_features=len(X[0])
         else:
             self.num_features=0
+
     def random_sampling(self,ratio_samples):
         idx=[x for x in range(self.num_samples)]
         random_idx=np.random.choice(idx, int(ratio_samples * self.num_samples), True)
         X=self.X[random_idx]
         y=self.y[random_idx]
         return Dataset(X,y)
+
     def most_frequent_label(self):
         counts = np.bincount(self.y)
         return np.argmax(counts)
+
     def split(self,idx,value):
         left_idx=np.array([],dtype=int)
         right_idx=np.array([],dtype=int)
