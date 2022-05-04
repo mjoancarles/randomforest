@@ -8,9 +8,9 @@ class Dataset():
     def __init__(self,X,y):
         self.X=X
         self.y=y
-        self.num_samples = len(X)
+        self.num_samples = X.shape[0]
         if self.num_samples != 0:
-            self.num_features=len(X[0])
+            self.num_features = X.shape[1]
         else:
             self.num_features=0
 
@@ -22,8 +22,10 @@ class Dataset():
         return Dataset(X,y)
 
     def most_frequent_label(self):
-        counts = np.bincount(self.y)
-        return np.argmax(counts)
+        return np.argmax(np.bincount(self.y))
+
+    def mean_value(self):
+        return np.mean(self.y);
 
     def split(self,idx,value):
         left_idx=np.array([],dtype=int)
@@ -32,7 +34,6 @@ class Dataset():
         for idx,sample in enumerate(samples_of_feature_idx):
             if sample <= value:
                 left_idx=np.append(left_idx,idx)
-
             else:
                 right_idx=np.append(right_idx,idx)
 
@@ -40,3 +41,5 @@ class Dataset():
         right_dataset=Dataset(self.X[right_idx],self.y[right_idx])
         return left_dataset, right_dataset
 
+    def probability(self):
+        return  np.array([x/self.num_samples for x in np.bincount(self.y) if self.num_samples!=0])

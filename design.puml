@@ -1,0 +1,141 @@
+@startuml
+'https://plantuml.com/class-diagram
+skinparam classAttributeIconSize 0
+
+abstract class RandomForest {
+-num_trees : int
+-min_size : int
+-max_depth: int
+-ratio_samples : float
+-num_random_features : float
+-multiprocessing : boolean
+-extra_trees : boolean
+
++fit (x: float[][], y: float[])
++predict (X : float[][]) : int[]
++feature_importance(): dictionary
++print_trees():
+-predict_standard (X : float[][]): int[]
+-predict_multiprocessing (X : float[][]): int[]
+-make_decision_trees_standard (dataset : Dataset)
+-make_decision_trees_multiprocessing (dataset : Dataset)
+-target_predict (x : float[] ) : int
+-target_fit (dataset : Dataset) : Node
+-make_node (dataset : Dataset, depth : int) : Node
+-make_parent_or_leaf (dataset : Dataset, depth : int) : Node
+//-make_leaf (dataset : Dataset) : Leaf//
+-best_split (idx_features : int[], dataset : Dataset) : Dataset[2]
+-CART_cost (left_dataset : Dataset, right_dataset : Dataset) : float
+//-make_impurity(name_impurity : String) : ImpurityMeasures//
+//-combine_predictions(predictions: float[]):float//
+}
+
+class RandomForestClassifier extends RandomForest{
+-make_impurity(name_impurity : String): ImpurityMeasures
+-combine_predictions(predictions: float[]) : float
+-make_leaf(dataset : Dataset): Leaf
+}
+class RandomForestRegressor extends RandomForest{
+-make_impurity(name_impurity : String): ImpurityMeasures
+-combine_predictions(predictions: float[]) : float
+-make_leaf(dataset : Dataset): Leaf
+}
+
+interface Visitor{
+//visit_parent(parent: Parent)://
+//visit_leaf(leaf: Leaf)//
+}
+
+class Feature_importance implements Visitor{
+-occurrences: dictionary
++visit_parent(parent: Parent)
++visit_leaf(leaf: Leaf)
+}
+
+class Printer_tree implements Visitor{
+-depth: int
++visit_parent(parent: Parent)
++visit_leaf(leaf: Leaf)
+}
+
+interface ImpurityMeasures{
+//+compute_impurity(prob : float[])  : float//
+}
+
+class Gini implements ImpurityMeasures {
++comupte_impurity(dataset: Dataset()) :  float
+}
+
+class Entropy implements ImpurityMeasures {
++comupte_impurity(dataset: Dataset()) : float
+}
+
+class SumSquareError implements ImpurityMeasures{
++comupte_impurity(dataset: Dataset()) : float
+}
+
+class Dataset {
+-X: float [][]
+-y: int[]
+-num_samples : int
+-num_features : int
++random_sampling(ratio_samples : float) : Dataset
++split(idx : int, value : double) : Dataset[2]
++most_frequent_label() : int
++probability() : float[]
++mean_value(): float
+}
+
+interface Node {
+//+predict(x:float[]) : int//
+//+accept_visitor(visitor: Visitor) : int//
+}
+
+class Leaf implements Node{
+-value_or_label: float
++predict(x : float[]): float
++accept_visitor(visitor : Visitor)
+}
+
+class Parent implements Node{
+-idx_features : int
+-value : float
+-predict(x: float[]) : float
++accept_visitor(visitor : Visitor)
+
+}
+
+note right of Leaf::predict
+return label
+end note
+
+note left of Parent::predict
+if x[feature] <= value:
+    return left_child.predict(x)
+else:
+    return right_child.predict(x)
+end note
+
+note left of Node
+design patern
+**composite**
+end note
+note right of ImpurityMeasures
+design patern
+**strategy**
+end note
+note right of Visitor
+design patern
+**visitor**
+end note
+note right of RandomForest
+design patern
+**template method**
+end note
+
+Parent --> "2" Node: left_child, right_child
+RandomForest *--> "1" ImpurityMeasures : impurity_measure
+RandomForest *--left--> "1.." Node: decision_trees
+
+
+@enduml
