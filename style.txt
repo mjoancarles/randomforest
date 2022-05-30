@@ -1,0 +1,7 @@
+The only remaining problems that we have are:
+- The duplicated code lines we have, such as the criterion, logger or
+    hyper-parameters that we have to define in each different function (that
+    could be different if we wanted).
+- The uppercase problems with some variable's names, that must be that way in
+    order to understand the code better.
+- The name of some variables that do not appear in the english dictionary.
